@@ -1,0 +1,84 @@
+name: Kiro Review
+
+# Dispara automaticamente em todo Pull Request
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write   # necessário para comentar no PR
+      contents: read
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0     # histórico completo para gerar o diff
+
+      - name: Instalar Kiro CLI
+        run: curl -fsSL https://cli.kiro.dev/install | bash
+
+      - name: Gerar diff do PR
+        run: |
+          git fetch origin "${{ github.base_ref }}" --depth=0
+          git diff "origin/${{ github.base_ref }}...HEAD" > pr-diff.txt
+          echo "Tamanho do diff: $(wc -l < pr-diff.txt) linhas"
+          if [ ! -s pr-diff.txt ]; then
+            echo "AVISO: diff vazio. Verifique base_ref e fetch." >&2
+          fi
+
+      # ---------- Análise 1: Segurança ----------
+      - name: Revisão de segurança (headless)
+        env:
+          KIRO_API_KEY: ${{ secrets.KIRO_API_KEY }}
+        run: |
+          cat pr-diff.txt | kiro-cli chat --no-interactive --trust-tools=read,grep \
+            "Você é um revisor de segurança. Analise este diff de Pull Request e liste APENAS problemas de segurança, agrupados por severidade (Crítico, Alto, Médio). Para cada achado, cite o arquivo, a linha aproximada e a correção recomendada. Use markdown." \
+            > security-review.txt || echo "kiro-cli retornou código $?" >&2
+          if [ ! -s security-review.txt ]; then
+            echo "_A revisão de segurança não gerou saída nesta execução._" > security-review.txt
+          fi
+          echo "Revisão de segurança concluída"
+
+      # ---------- Análise 2: Qualidade de código ----------
+      - name: Revisão de qualidade (headless)
+        env:
+          KIRO_API_KEY: ${{ secrets.KIRO_API_KEY }}
+        run: |
+          cat pr-diff.txt | kiro-cli chat --no-interactive --trust-tools=read,grep \
+            "Você é um revisor de qualidade de código. Analise este diff e liste APENAS problemas de lógica, bugs, código confuso ou más práticas (ignore segurança). Para cada achado, cite o arquivo, a linha aproximada e a sugestão de melhoria. Use markdown." \
+            > quality-review.txt || echo "kiro-cli retornou código $?" >&2
+          if [ ! -s quality-review.txt ]; then
+            echo "_A revisão de qualidade não gerou saída nesta execução._" > quality-review.txt
+          fi
+          echo "Revisão de qualidade concluída"
+
+      # ---------- Comentário 1: Segurança ----------
+      - name: Postar revisão de segurança no PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const review = fs.readFileSync('security-review.txt', 'utf8');
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## 🔒 Revisão de segurança (Kiro)\n\n${review}\n\n---\n_Gerado via Kiro CLI Headless Mode._`
+            });
+
+      # ---------- Comentário 2: Qualidade ----------
+      - name: Postar revisão de qualidade no PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const review = fs.readFileSync('quality-review.txt', 'utf8');
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## 🧹 Revisão de qualidade de código (Kiro)\n\n${review}\n\n---\n_Gerado via Kiro CLI Headless Mode._`
+            });

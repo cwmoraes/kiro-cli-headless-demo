@@ -1,0 +1,96 @@
+name: Kiro Review (MOCK)
+
+# ============================================================================
+# VERSÃO MOCKADA — para demo sem depender do Kiro CLI real / API key / internet.
+# Posta DOIS comentários pré-escritos (segurança + qualidade), idênticos ao que
+# o Kiro produziria. Use quando quiser garantir que a demo funcione offline.
+#
+# Para usar: renomeie para kiro-review.yml (substituindo o real), ou mantenha
+# os dois e desabilite o real temporariamente.
+# ============================================================================
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  review-mock:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Simular análise
+        run: |
+          echo "Instalando Kiro CLI (mock)..."
+          sleep 3
+          echo "Analisando diff do PR (mock)..."
+          sleep 4
+          echo "Análise concluída (mock)"
+
+      - name: Postar revisão de segurança (mock)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const review = `## 🔒 Revisão de segurança (Kiro)
+
+            Problemas de segurança encontrados:
+
+            ### 🔴 Crítico
+
+            **1. Desserialização insegura com \`pickle\` — \`feature.py\`, linha ~15**
+            \`pickle.loads()\` sobre dados externos permite execução remota de código (RCE).
+            *Correção:* use \`json.loads()\` para dados não confiáveis.
+
+            **2. Path traversal — \`feature.py\`, linha ~27**
+            \`open("/data/" + user_input)\` permite ler arquivos fora do diretório esperado.
+            *Correção:* valide o caminho com \`os.path.realpath\`.
+
+            ### 🟠 Alto
+
+            **3. Verificação SSL desabilitada — \`feature.py\`, linha ~21**
+            \`requests.get(url, verify=False)\` expõe a requisição a man-in-the-middle.
+            *Correção:* remova \`verify=False\`.
+
+            ---
+            _Gerado via Kiro CLI Headless Mode._`;
+
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: review
+            });
+
+      - name: Postar revisão de qualidade (mock)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const review = `## 🧹 Revisão de qualidade de código (Kiro)
+
+            Problemas de lógica e qualidade encontrados:
+
+            **1. Fórmula de desconto incorreta — \`calcular_desconto\`, linha ~31**
+            Divide \`preco / (percentual / 100)\`, o que não calcula desconto. O correto seria \`preco * (1 - percentual / 100)\`. Não trata percentual = 0 (divisão por zero).
+            *Sugestão:* corrigir a fórmula e validar o percentual.
+
+            **2. Loop ignora o primeiro item — \`processar_pedidos\`, linha ~39**
+            \`for i in range(1, len(pedidos))\` começa em 1, pulando o índice 0. O total sempre exclui o primeiro pedido.
+            *Sugestão:* iterar direto com \`for pedido in pedidos\`.
+
+            **3. Função ignora o parâmetro de busca — \`buscar_cliente\`, linha ~48**
+            O \`return\` dentro do loop retorna sempre o primeiro cliente, ignorando o parâmetro \`nome\`.
+            *Sugestão:* comparar \`cliente["nome"] == nome\` antes de retornar.
+
+            ---
+            _Gerado via Kiro CLI Headless Mode._`;
+
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: review
+            });
