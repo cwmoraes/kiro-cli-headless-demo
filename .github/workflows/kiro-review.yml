@@ -22,7 +22,7 @@ jobs:
 
       - name: Gerar diff do PR
         run: |
-          git fetch origin "${{ github.base_ref }}" --depth=0
+          git fetch origin "${{ github.base_ref }}"
           git diff "origin/${{ github.base_ref }}...HEAD" > pr-diff.txt
           echo "Tamanho do diff: $(wc -l < pr-diff.txt) linhas"
           if [ ! -s pr-diff.txt ]; then
