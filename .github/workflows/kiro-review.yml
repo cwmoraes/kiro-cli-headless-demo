@@ -34,8 +34,9 @@ jobs:
         env:
           KIRO_API_KEY: ${{ secrets.KIRO_API_KEY }}
         run: |
-          cat pr-diff.txt | kiro-cli chat --no-interactive --trust-tools=read,grep \
-            "O diff do Pull Request está no texto recebido a seguir. Você é um revisor de segurança. Analise as mudanças e liste APENAS problemas de segurança, agrupados por severidade (Crítico, Alto, Médio). Para cada achado, cite o arquivo, a linha aproximada e a correção recomendada. Use markdown." \
+          DIFF="$(cat pr-diff.txt)"
+          kiro-cli chat --no-interactive --trust-tools=read,grep \
+            "Você é um revisor de segurança. Analise o diff de Pull Request fornecido abaixo e liste APENAS problemas de segurança, agrupados por severidade (Crítico, Alto, Médio). Para cada achado, cite o arquivo, a linha aproximada e a correção recomendada. Use markdown. DIFF A ANALISAR: $DIFF" \
             2>&1 | sed -E 's/\x1b\[[0-9;?]*[a-zA-Z]//g' > security-review.txt || echo "kiro-cli retornou código $?" >&2
           if [ ! -s security-review.txt ]; then
             echo "_A revisão de segurança não gerou saída nesta execução._" > security-review.txt
@@ -47,8 +48,9 @@ jobs:
         env:
           KIRO_API_KEY: ${{ secrets.KIRO_API_KEY }}
         run: |
-          cat pr-diff.txt | kiro-cli chat --no-interactive --trust-tools=read,grep \
-            "O diff do Pull Request está no texto recebido a seguir. Você é um revisor de qualidade de código. Analise as mudanças e liste APENAS problemas de lógica, bugs, código confuso ou más práticas (ignore segurança). Para cada achado, cite o arquivo, a linha aproximada e a sugestão de melhoria. Use markdown." \
+          DIFF="$(cat pr-diff.txt)"
+          kiro-cli chat --no-interactive --trust-tools=read,grep \
+            "Você é um revisor de qualidade de código. Analise o diff de Pull Request fornecido abaixo e liste APENAS problemas de lógica, bugs, código confuso ou más práticas (ignore segurança). Para cada achado, cite o arquivo, a linha aproximada e a sugestão de melhoria. Use markdown. DIFF A ANALISAR: $DIFF" \
             2>&1 | sed -E 's/\x1b\[[0-9;?]*[a-zA-Z]//g' > quality-review.txt || echo "kiro-cli retornou código $?" >&2
           if [ ! -s quality-review.txt ]; then
             echo "_A revisão de qualidade não gerou saída nesta execução._" > quality-review.txt
