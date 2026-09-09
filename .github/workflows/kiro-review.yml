@@ -40,8 +40,9 @@ jobs:
           export DIFF_CONTENT="$(cat pr-diff.txt)"
           PROMPT_BASE="Você é um revisor de segurança. Analise o diff de Pull Request a seguir e liste APENAS problemas de segurança, agrupados por severidade (Crítico, Alto, Médio). Para cada achado, cite o arquivo, a linha aproximada e a correção recomendada. Use markdown."
           printf '%s\n\nDIFF A ANALISAR:\n%s\n' "$PROMPT_BASE" "$DIFF_CONTENT" \
-            | kiro-cli chat --no-interactive --trust-tools=read,grep \
-            2>&1 | sed -E 's/\x1b\[[0-9;?]*[a-zA-Z]//g' > security-review.txt || echo "kiro-cli retornou código $?" >&2
+            | kiro-cli chat --no-interactive --trust-tools=read,grep 2>&1 \
+            | sed -E 's/\x1b\[[0-9;?]*[a-zA-Z]//g' \
+            | grep -vE 'Failed to retrieve MCP settings|Try running .*kiro-cli login' > security-review.txt || echo "kiro-cli retornou código $?" >&2
           if [ ! -s security-review.txt ]; then
             echo "_A revisão de segurança não gerou saída nesta execução._" > security-review.txt
           fi
@@ -56,8 +57,9 @@ jobs:
           export DIFF_CONTENT="$(cat pr-diff.txt)"
           PROMPT_BASE="Você é um revisor de qualidade de código. Analise o diff de Pull Request a seguir e liste APENAS problemas de lógica, bugs, código confuso ou más práticas (ignore segurança). Para cada achado, cite o arquivo, a linha aproximada e a sugestão de melhoria. Use markdown."
           printf '%s\n\nDIFF A ANALISAR:\n%s\n' "$PROMPT_BASE" "$DIFF_CONTENT" \
-            | kiro-cli chat --no-interactive --trust-tools=read,grep \
-            2>&1 | sed -E 's/\x1b\[[0-9;?]*[a-zA-Z]//g' > quality-review.txt || echo "kiro-cli retornou código $?" >&2
+            | kiro-cli chat --no-interactive --trust-tools=read,grep 2>&1 \
+            | sed -E 's/\x1b\[[0-9;?]*[a-zA-Z]//g' \
+            | grep -vE 'Failed to retrieve MCP settings|Try running .*kiro-cli login' > quality-review.txt || echo "kiro-cli retornou código $?" >&2
           if [ ! -s quality-review.txt ]; then
             echo "_A revisão de qualidade não gerou saída nesta execução._" > quality-review.txt
           fi
