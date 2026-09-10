@@ -56,5 +56,3 @@ def gerar_id_transacao(dados):
 def aplicar_taxa(valor, taxa_percentual):
     """Aplica uma taxa percentual sobre o valor."""
     return valor + valor * taxa_percentual
-
-# comentario para forcar novo diff e testar idempotencia
