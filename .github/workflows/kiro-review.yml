@@ -5,8 +5,11 @@ on:
 
 jobs:
   review:
-    # Só PRs de branches do próprio repositório (forks não recebem o secret)
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    # Só PRs de branches do próprio repositório, exceto Dependabot
+    # (forks e Dependabot não recebem os secrets normais)
+    if: >
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 10        # não há flag de timeout no CLI; controle aqui
     permissions:
