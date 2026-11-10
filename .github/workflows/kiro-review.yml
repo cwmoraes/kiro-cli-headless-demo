@@ -41,7 +41,8 @@ jobs:
         run: |
           # Roda o Kiro num diretório temporário dedicado, fora do workspace.
           # O agente "revisor" não tem ferramentas: o diff já vem inteiro pelo
-          # stdin, então ele não precisa ler arquivos, rodar comandos nem usar a rede.
+          # stdin, então ele não precisa ler arquivos, rodar comandos nem usar
+          # ferramentas de rede.
           review_dir="$RUNNER_TEMP/kiro-review"
           mkdir -p "$review_dir/.kiro/agents"
           cd "$review_dir"
